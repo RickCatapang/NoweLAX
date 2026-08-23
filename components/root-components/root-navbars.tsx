@@ -2,7 +2,7 @@ import React from "react";
 import Logo from "./logo";
 
 import { MobileBottomNav } from "./mobile-nav-link";
-import RootSearch from "./root-search";
+
 import { Button } from "../ui/button";
 import { Flame, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "../ui/avatar";
