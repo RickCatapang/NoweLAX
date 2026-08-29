@@ -1,8 +1,18 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AuroraText } from "@/components/ui/aurora-text";
+import { auth } from "@/src/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function GetStartedPage() {
+export default async function GetStartedPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (session) {
+    redirect("/dashboard");
+  }
   return (
     <main className="min-h-screen flex items-center justify-center px-6 pt-24 pb-20">
       <div className="w-full max-w-sm text-center space-y-8">
