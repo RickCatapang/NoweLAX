@@ -8,7 +8,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import RootNavbar from "@/components/root-components/root-navbars";
+// import RootNavbar from "@/components/root-components/root-navbars";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Poppins({
@@ -84,7 +84,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             }}
           />
           {/* Your Content/Components*/}
-          <RootNavbar />
+          {/* <RootNavbar /> */}
 
           <div className="relative">{children}</div>
           <Toaster />

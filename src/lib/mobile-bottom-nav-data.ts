@@ -15,13 +15,13 @@ export const navItems = [
   },
   {
     href: "/recent",
-    label: "Recent",
+    label: "Questions",
     icon: Flame,
     activeClass: "bg-chart-4",
   },
   {
     href: "/tasks",
-    label: "Tasks",
+    label: "Assesment",
     icon: BookmarkCheck,
     activeClass: "bg-chart-3",
   },

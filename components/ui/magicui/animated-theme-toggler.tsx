@@ -52,7 +52,10 @@ export const AnimatedThemeToggler = ({ className }: props) => {
       size="icon"
       ref={buttonRef}
       onClick={changeTheme}
-      className={cn(className, "dark:bg-primary dark:text-primary-foreground")}
+      className={cn(
+        className,
+        "bg-accent dark:bg-primary dark:text-primary-foreground",
+      )}
     >
       {isDarkMode ? <LampDesk className="" /> : <Moon className="" />}
     </Button>

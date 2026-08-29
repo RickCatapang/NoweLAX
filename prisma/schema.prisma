@@ -1,31 +1,271 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// ============================================================
+// NOWELAX - EXAM / QUIZ PLATFORM
+// ============================================================
+//
+// Stack:
+// - Next.js 16
+// - Prisma 7
+// - PostgreSQL / Supabase
+// - Better Auth
+//
+// ============================================================
+// DATABASE PURPOSE
+// ============================================================
+//
+// This database supports the complete planned NoweLAX platform.
+//
+// CORE
+// ------------------------------------------------------------
+// - Better Auth users
+// - Categories
+// - Subjects
+// - Category + Subject contexts
+// - Reusable question bank
+// - Multiple-choice questions
+// - Identification questions
+// - Question versioning
+// - JSON file import
+// - JSON pasted-text import
+// - CSV file import
+// - Import history
+// - Import item/error tracking
+// - Fixed assessments
+// - Dynamic assessments
+// - Multi-subject assessments
+// - Dynamic question selection rules
+// - Public/private questions
+// - Reusable questions
+// - Public/private/restricted assessments
+// - Direct assessment access
+// - Assessment share links
+// - Assessment attempts
+// - Per-question attempt records
+// - Per-question answers
+// - Timing/performance records
+// - Question ratings
+// - Assessment ratings
+// - Creator ratings
+//
+// FUTURE DATABASE-READY FEATURES
+// ------------------------------------------------------------
+// - Question discovery
+// - Rating-based question selection
+// - Credibility scoring
+// - Random question selection
+// - Recommendations
+// - Advanced analytics
+// - Difficulty analysis
+// - Question performance statistics
+// - Creator reputation
+// - Assessment popularity
+//
+// IMPORTANT
+// ------------------------------------------------------------
+// The database stores DATA and RELATIONSHIPS.
+//
+// Server-side application logic will handle:
+// - Permissions
+// - Random question selection
+// - Dynamic assessment generation
+// - Rating-based selection
+// - Credibility calculation
+// - Difficulty calculation
+// - Identification answer normalization
+// - Scoring
+// - Anti-cheating
+// - Discovery ranking
+// - Recommendations
+// - Analytics
+//
+// ============================================================
+// PRISMA CLIENT
+// ============================================================
 
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
+// ============================================================
+// DATABASE
+// ============================================================
+//
+// Prisma 7.
+//
+// DATABASE_URL is configured in prisma.config.ts.
+//
+// ============================================================
+
 datasource db {
   provider = "postgresql"
 }
 
+// ============================================================
+// ENUMS
+// ============================================================
+
+// ============================================================
+// CATEGORY
+// ============================================================
+
+enum CategoryType {
+  EXAMINATION
+  EDUCATIONAL
+  ORGANIZATIONAL
+  GENERAL
+}
+
+// ============================================================
+// QUESTION
+// ============================================================
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  IDENTIFICATION
+}
+
+enum QuestionVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum QuestionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum QuestionSource {
+  MANUAL
+  JSON_IMPORT
+  CSV_IMPORT
+}
+
+// ============================================================
+// IMPORT
+// ============================================================
+
+enum ImportSourceType {
+  JSON
+  CSV
+}
+
+enum ImportInputMode {
+  FILE
+  PASTED_TEXT
+}
+
+enum ImportStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+  PARTIAL
+}
+
+enum ImportItemStatus {
+  PENDING
+  IMPORTED
+  FAILED
+}
+
+// ============================================================
+// ASSESSMENT
+// ============================================================
+
+enum AssessmentType {
+  EXAM
+  QUIZ
+}
+
+enum AssessmentMode {
+  FIXED
+  DYNAMIC
+}
+
+enum AssessmentVisibility {
+  PRIVATE
+  PUBLIC
+  RESTRICTED
+}
+
+enum AssessmentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ============================================================
+// ATTEMPT
+// ============================================================
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+  EXPIRED
+  ABANDONED
+}
+
+// ============================================================
+// BETTER AUTH
+// ============================================================
+
+// ============================================================
+// USER
+// ============================================================
+//
+// Main application user.
+//
+// A user can:
+// - Create questions
+// - Import questions
+// - Create assessments
+// - Share assessments
+// - Take assessments
+// - Rate questions
+// - Rate assessments
+// - Rate creators
+//
+// ============================================================
+
 model User {
-  id            String    @id
+  id            String   @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Better Auth
+  sessions Session[]
+  accounts Account[]
+
+  // Content created
+  questions     Question[]
+  assessments   Assessment[]
+  importBatches ImportBatch[]
+
+  // Assessment access
+  assessmentAccesses AssessmentAccess[]
+
+  // Assessment attempts
+  attempts Attempt[]
+
+  // Ratings given
+  questionRatings   QuestionRating[]
+  assessmentRatings AssessmentRating[]
+
+  // Creator ratings
+  creatorRatingsGiven    CreatorRating[] @relation("CreatorRatingsGiven")
+  creatorRatingsReceived CreatorRating[] @relation("CreatorRatingsReceived")
 
   @@unique([email])
   @@map("user")
 }
+
+// ============================================================
+// SESSION
+// ============================================================
 
 model Session {
   id        String   @id
@@ -36,12 +276,17 @@ model Session {
   ipAddress String?
   userAgent String?
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([token])
   @@index([userId])
   @@map("session")
 }
+
+// ============================================================
+// ACCOUNT
+// ============================================================
 
 model Account {
   id                    String    @id
@@ -49,7 +294,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -60,10 +304,16 @@ model Account {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([issuer, accountId], map: "account_issuer_accountId_uidx")
   @@index([userId])
   @@map("account")
 }
+
+// ============================================================
+// VERIFICATION
+// ============================================================
 
 model Verification {
   id         String   @id
@@ -75,4 +325,986 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ============================================================
+// CATEGORY / SUBJECT SYSTEM
+// ============================================================
+
+// ============================================================
+// CATEGORY
+// ============================================================
+//
+// Broad examination or educational context.
+//
+// Examples:
+// - UP Entrance Examination
+// - Civil Service Examination
+// - LET
+// - General Practice
+//
+// ============================================================
+
+model Category {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  type        CategoryType @default(GENERAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categorySubjects CategorySubject[]
+
+  @@unique([name])
+  @@map("category")
+}
+
+// ============================================================
+// SUBJECT
+// ============================================================
+//
+// General subject.
+//
+// Examples:
+// - Mathematics
+// - English
+// - Science
+//
+// ============================================================
+
+model Subject {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categorySubjects CategorySubject[]
+
+  @@unique([name])
+  @@map("subject")
+}
+
+// ============================================================
+// CATEGORY SUBJECT
+// ============================================================
+//
+// Connects a Category and Subject.
+//
+// Example:
+//
+// UP Entrance Examination + Mathematics
+// Civil Service Examination + Mathematics
+//
+// These are different contexts.
+//
+// ============================================================
+
+model CategorySubject {
+  id         String @id @default(cuid())
+  categoryId String
+  subjectId  String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subject  Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  // Questions belonging to this exact context
+  questions Question[]
+
+  // Assessment subject contexts
+  assessmentSubjects AssessmentSubject[]
+
+  @@unique([categoryId, subjectId])
+  @@index([categoryId])
+  @@index([subjectId])
+  @@map("category_subject")
+}
+
+// ============================================================
+// QUESTION SYSTEM
+// ============================================================
+
+// ============================================================
+// QUESTION
+// ============================================================
+//
+// Permanent identity of a question.
+//
+// Actual content is stored in QuestionVersion.
+//
+// Question
+//   ├── Version 1
+//   ├── Version 2
+//   └── Version 3
+//
+// Ratings, ownership, discovery and reuse belong here.
+//
+// ============================================================
+
+model Question {
+  id                String @id @default(cuid())
+  categorySubjectId String
+  createdById       String
+
+  // Visibility / lifecycle
+  visibility QuestionVisibility @default(PRIVATE)
+  status     QuestionStatus     @default(DRAFT)
+
+  // Whether other creators may reference this question
+  // in their own assessments.
+  allowReuse Boolean @default(false)
+
+  // Original source
+  source QuestionSource @default(MANUAL)
+
+  // Import batch that originally created this question
+  importBatchId String?
+
+  // Future discovery / analytics
+  declaredDifficulty Float?
+  averageRating      Float  @default(0)
+  ratingCount        Int    @default(0)
+  credibilityScore   Float  @default(0)
+  usageCount         Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  categorySubject CategorySubject @relation(fields: [categorySubjectId], references: [id], onDelete: Restrict)
+  createdBy       User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  importBatch     ImportBatch?    @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  // Version history
+  versions QuestionVersion[]
+
+  // Assessments
+  assessmentQuestions AssessmentQuestion[]
+
+  // Attempts
+  attemptQuestions AttemptQuestion[]
+
+  // Ratings
+  ratings QuestionRating[]
+
+  // Import records
+  importBatchItems ImportBatchItem[]
+
+  @@index([categorySubjectId])
+  @@index([createdById])
+  @@index([importBatchId])
+  // Public/reusable question discovery
+  @@index([categorySubjectId, status, visibility, allowReuse])
+  // Difficulty discovery
+  @@index([categorySubjectId, status, declaredDifficulty])
+  // Rating discovery
+  @@index([categorySubjectId, status, averageRating])
+  // Credibility discovery
+  @@index([categorySubjectId, status, credibilityScore])
+  @@map("question")
+}
+
+// ============================================================
+// QUESTION VERSION
+// ============================================================
+//
+// Stores the actual question content.
+//
+// A question can have multiple versions.
+//
+// Old assessments/attempts can continue referencing an older
+// version even after the question is edited.
+//
+// ============================================================
+
+model QuestionVersion {
+  id         String @id @default(cuid())
+  questionId String
+
+  // Sequential version number
+  version Int
+
+  type QuestionType
+
+  // Actual question text
+  questionText String
+
+  hint        String?
+  explanation String?
+
+  createdAt DateTime @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  // Multiple-choice options
+  choices Choice[]
+
+  // Identification acceptable answers
+  acceptableAnswers QuestionAnswer[]
+
+  // Assessments using this exact version
+  assessmentQuestions AssessmentQuestion[]
+
+  // Attempts using this exact version
+  attemptQuestions AttemptQuestion[]
+
+  @@unique([questionId, version])
+  @@index([questionId])
+  @@map("question_version")
+}
+
+// ============================================================
+// CHOICE
+// ============================================================
+//
+// Multiple-choice option.
+//
+// ============================================================
+
+model Choice {
+  id                String @id @default(cuid())
+  questionVersionId String
+
+  // A, B, C, D
+  label String
+
+  // Answer content
+  content String
+
+  // Correct answer
+  isCorrect Boolean @default(false)
+
+  // Display order
+  sortOrder Int @default(0)
+
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+
+  // Answers selecting this choice
+  attemptAnswers AttemptAnswer[]
+
+  @@index([questionVersionId])
+  @@map("choice")
+}
+
+// ============================================================
+// QUESTION ANSWER
+// ============================================================
+//
+// Acceptable answers for identification questions.
+//
+// Example:
+//
+// Question:
+// "Who wrote Noli Me Tangere?"
+//
+// Acceptable:
+// - Jose Rizal
+// - Dr. Jose Rizal
+// - José Rizal
+//
+// ============================================================
+
+model QuestionAnswer {
+  id                String @id @default(cuid())
+  questionVersionId String
+
+  answer String
+
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id], onDelete: Cascade)
+
+  @@index([questionVersionId])
+  @@map("question_answer")
+}
+
+// ============================================================
+// QUESTION IMPORT SYSTEM
+// ============================================================
+
+// ============================================================
+// IMPORT BATCH
+// ============================================================
+//
+// One bulk import operation.
+//
+// JSON:
+// 1. Uploaded JSON file
+// 2. Pasted JSON text
+//
+// CSV:
+// 1. Uploaded CSV file
+//
+// ============================================================
+
+model ImportBatch {
+  id     String @id @default(cuid())
+  userId String
+
+  // JSON or CSV
+  sourceType ImportSourceType
+
+  // FILE or PASTED_TEXT
+  inputMode ImportInputMode
+
+  // Original uploaded filename
+  fileName String?
+
+  // Original pasted/imported source text
+  //
+  // Useful for:
+  // - debugging
+  // - reproducing imports
+  // - viewing import history
+  // - validating malformed JSON
+  //
+  sourceText String? @db.Text
+
+  status ImportStatus @default(PROCESSING)
+
+  totalItems    Int @default(0)
+  importedItems Int @default(0)
+  failedItems   Int @default(0)
+
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Questions created by this import
+  questions Question[]
+
+  // Individual imported rows/objects
+  items ImportBatchItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([sourceType])
+  @@index([inputMode])
+  @@map("import_batch")
+}
+
+// ============================================================
+// IMPORT BATCH ITEM
+// ============================================================
+//
+// Represents ONE object/row from an import.
+//
+// Example:
+//
+// Item 1 -> imported
+// Item 2 -> imported
+// Item 3 -> failed
+// Item 4 -> imported
+//
+// ============================================================
+
+model ImportBatchItem {
+  id            String @id @default(cuid())
+  importBatchId String
+
+  // Position in source
+  rowNumber Int?
+
+  status ImportItemStatus @default(PENDING)
+
+  // Specific error for this item
+  errorMessage String?
+
+  // Raw imported object/row
+  rawData Json?
+
+  // Question created from this item
+  questionId String?
+
+  createdAt DateTime @default(now())
+
+  importBatch ImportBatch @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
+
+  // Optional question created by this import item
+  question Question? @relation(fields: [questionId], references: [id], onDelete: SetNull)
+
+  @@index([importBatchId])
+  @@index([status])
+  @@index([questionId])
+  @@map("import_batch_item")
+}
+
+// ============================================================
+// ASSESSMENT SYSTEM
+// ============================================================
+
+// ============================================================
+// ASSESSMENT
+// ============================================================
+//
+// Exam or quiz created by a user.
+//
+// FIXED:
+//
+// Explicit questions are selected and stored in
+// AssessmentQuestion.
+//
+// DYNAMIC:
+//
+// Questions are selected by server-side logic according to
+// AssessmentSelectionRule.
+//
+// ============================================================
+
+model Assessment {
+  id          String @id @default(cuid())
+  createdById String
+
+  title       String
+  description String?
+
+  type AssessmentType
+
+  // FIXED or DYNAMIC
+  mode AssessmentMode @default(FIXED)
+
+  visibility AssessmentVisibility @default(PRIVATE)
+  status     AssessmentStatus     @default(DRAFT)
+
+  // NULL = unlimited
+  timeLimitSeconds Int?
+
+  // Future discovery / analytics
+  averageRating Float @default(0)
+  ratingCount   Int   @default(0)
+  attemptCount  Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Creator
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  // Subjects included in the assessment
+  subjects AssessmentSubject[]
+
+  // Explicit/fixed questions
+  questions AssessmentQuestion[]
+
+  // Direct access
+  accesses AssessmentAccess[]
+
+  // Shareable links
+  shareLinks AssessmentShareLink[]
+
+  // Attempts
+  attempts Attempt[]
+
+  // Ratings
+  ratings AssessmentRating[]
+
+  @@index([createdById])
+  @@index([status, visibility])
+  @@index([createdById, status])
+  @@map("assessment")
+}
+
+// ============================================================
+// ASSESSMENT SUBJECT
+// ============================================================
+//
+// Connects an Assessment to a CategorySubject.
+//
+// Allows multi-subject assessments.
+//
+// Example:
+//
+// UP Entrance Examination
+//   ├── Mathematics -> 20 questions
+//   ├── English     -> 15 questions
+//   └── Science     -> 15 questions
+//
+// For DYNAMIC assessments, questionCount tells the system how
+// many questions to select for this subject.
+//
+// ============================================================
+
+model AssessmentSubject {
+  id String @id @default(cuid())
+
+  assessmentId      String
+  categorySubjectId String
+
+  // Number of questions requested.
+  //
+  // Primarily used for DYNAMIC assessments.
+  questionCount Int?
+
+  assessment      Assessment      @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  categorySubject CategorySubject @relation(fields: [categorySubjectId], references: [id], onDelete: Restrict)
+
+  // Dynamic selection rules
+  selectionRules AssessmentSelectionRule[]
+
+  // Fixed questions assigned to this subject
+  questions AssessmentQuestion[]
+
+  // Attempt questions generated from this subject
+  attemptQuestions AttemptQuestion[]
+
+  @@unique([assessmentId, categorySubjectId])
+  @@index([assessmentId])
+  @@index([categorySubjectId])
+  @@map("assessment_subject")
+}
+
+// ============================================================
+// ASSESSMENT SELECTION RULE
+// ============================================================
+//
+// Used by DYNAMIC assessments.
+//
+// The database stores the configuration.
+//
+// Server-side application logic interprets these rules.
+//
+// ============================================================
+
+model AssessmentSelectionRule {
+  id                  String @id @default(cuid())
+  assessmentSubjectId String
+
+  // Rating filter
+  minRating Float?
+
+  // Credibility filter
+  minCredibilityScore Float?
+
+  // Difficulty range
+  minDifficulty Float?
+  maxDifficulty Float?
+
+  // Question eligibility
+  publicOnly   Boolean @default(true)
+  reusableOnly Boolean @default(true)
+
+  // Randomization
+  randomize Boolean @default(true)
+
+  // Attempt history
+  excludePreviouslyAttempted Boolean @default(false)
+
+  // Number of previous attempts/questions to consider.
+  // Application logic interprets this.
+  historyWindow Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessmentSubject AssessmentSubject @relation(fields: [assessmentSubjectId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentSubjectId])
+  @@map("assessment_selection_rule")
+}
+
+// ============================================================
+// ASSESSMENT QUESTION
+// ============================================================
+//
+// Explicit question placed inside an assessment.
+//
+// Primarily used by FIXED assessments.
+//
+// Stores:
+// - Assessment
+// - Question
+// - Exact QuestionVersion
+// - Optional AssessmentSubject
+// - Order
+// - Points
+//
+// ============================================================
+
+model AssessmentQuestion {
+  id String @id @default(cuid())
+
+  assessmentId        String
+  assessmentSubjectId String?
+
+  questionId        String
+  questionVersionId String
+
+  // Position in assessment
+  sortOrder Int @default(0)
+
+  // Points awarded if correct
+  points Float @default(1)
+
+  assessment        Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessmentSubject AssessmentSubject? @relation(fields: [assessmentSubjectId], references: [id], onDelete: SetNull)
+
+  question        Question        @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  questionVersion QuestionVersion @relation(fields: [questionVersionId], references: [id], onDelete: Restrict)
+
+  // Attempt records generated from this fixed question
+  attemptQuestions AttemptQuestion[]
+
+  @@unique([assessmentId, questionId])
+  @@index([assessmentId])
+  @@index([assessmentSubjectId])
+  @@index([questionId])
+  @@index([questionVersionId])
+  @@map("assessment_question")
+}
+
+// ============================================================
+// ASSESSMENT SHARING
+// ============================================================
+
+// ============================================================
+// ASSESSMENT ACCESS
+// ============================================================
+//
+// Direct access to RESTRICTED assessments.
+//
+// Example:
+//
+// Private Review Exam
+//   ├── User A
+//   ├── User B
+//   └── User C
+//
+// ============================================================
+
+model AssessmentAccess {
+  id String @id @default(cuid())
+
+  assessmentId String
+  userId       String
+
+  createdAt DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, userId])
+  @@index([assessmentId])
+  @@index([userId])
+  @@map("assessment_access")
+}
+
+// ============================================================
+// ASSESSMENT SHARE LINK
+// ============================================================
+//
+// Shareable URL/token for an assessment.
+//
+// Example:
+//
+// /assessment/share/abc123xyz
+//
+// Actual permission logic is handled by the server.
+//
+// ============================================================
+
+model AssessmentShareLink {
+  id String @id @default(cuid())
+
+  assessmentId String
+
+  // Secret URL token
+  token String @unique
+
+  // Optional expiration
+  expiresAt DateTime?
+
+  // NULL = unlimited
+  maxUses Int?
+
+  // Number of times used
+  useCount Int @default(0)
+
+  // Creator can revoke the link
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([active])
+  @@map("assessment_share_link")
+}
+
+// ============================================================
+// ATTEMPTS / PERFORMANCE
+// ============================================================
+
+// ============================================================
+// ATTEMPT
+// ============================================================
+//
+// One attempt = one time a user takes an assessment.
+//
+// A user may take the same assessment multiple times.
+//
+// ============================================================
+
+model Attempt {
+  id String @id @default(cuid())
+
+  assessmentId String
+  userId       String
+
+  status AttemptStatus @default(IN_PROGRESS)
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  // Score
+  score       Float?
+  totalPoints Float?
+  percentage  Float?
+
+  // Total time in seconds
+  durationSeconds Int?
+
+  createdAt DateTime @default(now())
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Questions shown during this attempt
+  questions AttemptQuestion[]
+
+  @@index([assessmentId])
+  @@index([userId])
+  @@index([userId, assessmentId])
+  @@index([status])
+  @@map("attempt")
+}
+
+// ============================================================
+// ATTEMPT QUESTION
+// ============================================================
+//
+// Records the EXACT question/version the user received.
+//
+// This is critical for DYNAMIC assessments.
+//
+// Example:
+//
+// Assessment has 500 available questions.
+//
+// User A receives:
+//
+// Q5  Version 2
+// Q31 Version 1
+// Q92 Version 3
+//
+// Those exact records are preserved.
+//
+// ============================================================
+
+model AttemptQuestion {
+  id String @id @default(cuid())
+
+  attemptId String
+
+  // Permanent question identity
+  questionId String
+
+  // Exact version shown to user
+  questionVersionId String
+
+  // If generated from a FIXED AssessmentQuestion
+  assessmentQuestionId String?
+
+  // Subject context
+  assessmentSubjectId String?
+
+  // Position in this attempt
+  sortOrder Int @default(0)
+
+  // Timing
+  presentedAt      DateTime?
+  answeredAt       DateTime?
+  timeSpentSeconds Int?
+
+  // Result
+  answered     Boolean  @default(false)
+  isCorrect    Boolean?
+  pointsEarned Float?
+
+  // Relations
+  attempt            Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question           Question            @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  questionVersion    QuestionVersion     @relation(fields: [questionVersionId], references: [id], onDelete: Restrict)
+  assessmentQuestion AssessmentQuestion? @relation(fields: [assessmentQuestionId], references: [id], onDelete: SetNull)
+  assessmentSubject  AssessmentSubject?  @relation(fields: [assessmentSubjectId], references: [id], onDelete: SetNull)
+
+  // One submitted answer
+  answer AttemptAnswer?
+
+  @@unique([attemptId, sortOrder])
+  @@index([attemptId])
+  @@index([questionId])
+  @@index([questionVersionId])
+  @@index([assessmentQuestionId])
+  @@index([assessmentSubjectId])
+  @@map("attempt_question")
+}
+
+// ============================================================
+// ATTEMPT ANSWER
+// ============================================================
+//
+// MULTIPLE CHOICE:
+//
+// selectedChoiceId = selected option
+//
+// IDENTIFICATION:
+//
+// textAnswer = user's typed answer
+//
+// ============================================================
+
+model AttemptAnswer {
+  id String @id @default(cuid())
+
+  // One answer record per attempt question
+  attemptQuestionId String @unique
+
+  // Multiple choice
+  selectedChoiceId String?
+
+  // Identification
+  textAnswer String?
+
+  submittedAt DateTime @default(now())
+
+  attemptQuestion AttemptQuestion @relation(fields: [attemptQuestionId], references: [id], onDelete: Cascade)
+  selectedChoice  Choice?         @relation(fields: [selectedChoiceId], references: [id], onDelete: SetNull)
+
+  @@index([selectedChoiceId])
+  @@map("attempt_answer")
+}
+
+// ============================================================
+// QUESTION RATINGS
+// ============================================================
+
+// ============================================================
+// QUESTION RATING
+// ============================================================
+//
+// One user can rate one question once.
+//
+// Application logic should validate:
+//
+// 1 - 5
+//
+// ============================================================
+
+model QuestionRating {
+  id String @id @default(cuid())
+
+  questionId String
+  userId     String
+
+  rating Int
+
+  comment String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([questionId])
+  @@index([userId])
+  @@map("question_rating")
+}
+
+// ============================================================
+// ASSESSMENT RATINGS
+// ============================================================
+
+// ============================================================
+// ASSESSMENT RATING
+// ============================================================
+//
+// One user can rate one assessment once.
+//
+// Application logic should validate:
+//
+// 1 - 5
+//
+// ============================================================
+
+model AssessmentRating {
+  id String @id @default(cuid())
+
+  assessmentId String
+  userId       String
+
+  rating Int
+
+  comment String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, userId])
+  @@index([assessmentId])
+  @@index([userId])
+  @@map("assessment_rating")
+}
+
+// ============================================================
+// CREATOR RATINGS
+// ============================================================
+
+// ============================================================
+// CREATOR RATING
+// ============================================================
+//
+// User A rates User B.
+//
+// This is a self-referencing User relationship.
+//
+// Explicit relation names are REQUIRED because both relations
+// point to User.
+//
+// ============================================================
+
+model CreatorRating {
+  id String @id @default(cuid())
+
+  // Person giving rating
+  raterId String
+
+  // Creator receiving rating
+  creatorId String
+
+  // Rating from 1 - 5
+  rating Int
+
+  comment String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Self-referencing User relations
+  rater   User @relation("CreatorRatingsGiven", fields: [raterId], references: [id], onDelete: Cascade)
+  creator User @relation("CreatorRatingsReceived", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  // One user can rate another creator once
+  @@unique([raterId, creatorId])
+  @@index([raterId])
+  @@index([creatorId])
+  @@map("creator_rating")
 }
