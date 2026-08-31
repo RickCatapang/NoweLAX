@@ -30,14 +30,14 @@ export default function DashboardPage() {
             </p>
           </div>
           <Button asChild>
-            <Link href="/question-bank/import">
+            <Link href="/question-bank/import/multiple-choice">
               <Upload />
               Import Questions
             </Link>
           </Button>
         </section>
         {/* Main actions */}
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-2">
           <Card className="transition-colors hover:bg-muted/50">
             <CardHeader>
               <div className="mb-2 flex size-10 items-center justify-center rounded-lg border bg-background">
@@ -53,7 +53,9 @@ export default function DashboardPage() {
               </p>
 
               <Button variant="secondary" asChild>
-                <Link href="/question-bank">Open Question Bank</Link>
+                <Link href="/question-bank/import/multiple-choice">
+                  Open Question Bank
+                </Link>
               </Button>
             </CardContent>
           </Card>
@@ -74,26 +76,6 @@ export default function DashboardPage() {
 
               <Button variant="secondary" asChild>
                 <Link href="/assessments">View Assessments</Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="transition-colors hover:bg-muted/50">
-            <CardHeader>
-              <div className="mb-2 flex size-10 items-center justify-center rounded-lg border bg-background">
-                <GraduationCap className="size-5" />
-              </div>
-
-              <CardTitle>Start Practicing</CardTitle>
-            </CardHeader>
-
-            <CardContent className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">
-                Your available assessments will eventually appear here.
-              </p>
-
-              <Button variant="secondary" disabled>
-                Nothing to take yet 🐥
               </Button>
             </CardContent>
           </Card>
@@ -151,7 +133,7 @@ export default function DashboardPage() {
               </div>
 
               <Button className="mt-6" asChild>
-                <Link href="/question-bank/import">
+                <Link href="/question-bank/import/multiple-choice">
                   <Plus />
                   Add your first questions
                 </Link>

@@ -20,7 +20,7 @@ export default async function AppLayout({
   return (
     <>
       <AppNavbar user={session.user} />
-      <main className="min-h-screen pt-24 pb-24 sm:pb-8">{children}</main>
+      <main className="min-h-screen pt-24 pb-8">{children}</main>
     </>
   );
 }

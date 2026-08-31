@@ -647,6 +647,9 @@ model ImportBatch {
   // FILE or PASTED_TEXT
   inputMode ImportInputMode
 
+  //MULTIPLE_CHOICE or IDENTIFICATION
+  questionType QuestionType
+
   // Original uploaded filename
   fileName String?
 

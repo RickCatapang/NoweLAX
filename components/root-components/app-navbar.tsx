@@ -64,7 +64,7 @@ export default function AppNavbar({ user }: AppNavbarProps) {
     <nav className="fixed top-0 z-50 hidden w-full gap-2 p-2 sm:flex lg:px-10">
       {/* Logo */}
 
-      <Card className="flex h-18 w-30 shrink-0 items-center justify-center p-0">
+      <Card className="flex h-18 w-30 shrink-0 backdrop-blur-xs items-center justify-center p-0">
         <div className="scale-[0.8]">
           <AnimatedLogo />
         </div>
