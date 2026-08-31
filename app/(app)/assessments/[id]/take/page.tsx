@@ -734,7 +734,7 @@ export default function TakeAssessmentPage() {
 
   if (!currentQuestion && !isLoading) {
     return (
-      <div className="container mx-auto max-w-4xl py-8 px-4">
+      <div className="container mx-auto max-w-4xl px-4">
         <Card className="p-8 text-center">
           <p className="text-muted-foreground">No questions available.</p>
           <Button className="mt-4" onClick={() => router.push("/assessments")}>
